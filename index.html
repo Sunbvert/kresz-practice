@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Chinese-language practice questions for the Hungarian driving licence theory test.">
+  <title>KRESZ Practice · Hungarian Driving Test</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#" id="brandLink" aria-label="KRESZ Practice home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="2.5"/><circle cx="16" cy="16" r="3" fill="currentColor"/><path d="M6 14h20M16 19v9M13 17 7 8m12 9 6-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </span>
+      <span><strong>KRESZ</strong><small>Practice · 中文练习</small></span>
+    </a>
+    <nav class="header-actions" aria-label="Quiz actions">
+      <button class="button button-ghost" id="viewAllButton" type="button">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>All questions</span>
+      </button>
+      <button class="button button-primary" id="reviewWrongButton" type="button">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.1 8a7 7 0 0 1 11.8-1L20 12M4 12l2.1 5a7 7 0 0 0 11.8-1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Review wrong</span><span class="button-count" id="wrongButtonCount">0</span>
+      </button>
+      <button class="button button-icon" id="resetButton" type="button" title="Reset all progress" aria-label="Reset all progress">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-9 0 1 15h8l1-15M10 10v7m4-7v7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <main class="app-shell">
+    <section class="welcome-row" aria-labelledby="pageTitle">
+      <div>
+        <p class="eyebrow">HUNGARIAN DRIVING LICENCE</p>
+        <h1 id="pageTitle">Master your theory test.</h1>
+        <p class="subtitle">828 Chinese practice questions. Your progress is saved on this device.</p>
+      </div>
+      <div class="overall-progress" aria-label="Overall progress">
+        <svg class="progress-ring" viewBox="0 0 48 48" aria-hidden="true">
+          <circle class="progress-ring-track" cx="24" cy="24" r="19"/>
+          <circle class="progress-ring-value" id="progressRing" cx="24" cy="24" r="19"/>
+        </svg>
+        <div><strong id="progressPercent">0%</strong><span>complete</span></div>
+      </div>
+    </section>
+
+    <section class="stats-grid" aria-label="Your results">
+      <div class="stat-card"><span class="stat-icon answered" aria-hidden="true">✓</span><div><strong id="answeredCount">0</strong><span>Answered</span></div><small id="answeredTotal">of 828</small></div>
+      <div class="stat-card"><span class="stat-icon correct" aria-hidden="true">✓</span><div><strong id="correctCount">0</strong><span>Correct</span></div><small id="correctRate">—</small></div>
+      <div class="stat-card"><span class="stat-icon wrong" aria-hidden="true">×</span><div><strong id="wrongCount">0</strong><span>To review</span></div><small>wrong answers</small></div>
+    </section>
+
+    <section class="question-map-card" aria-labelledby="mapTitle">
+      <div class="map-header">
+        <div class="map-title-wrap">
+          <h2 id="mapTitle">Question map</h2>
+          <span id="mapSummary">0 of 828 answered</span>
+        </div>
+        <div class="map-legend" aria-label="Question status legend">
+          <span><i class="legend-box current"></i>Current</span>
+          <span><i class="legend-box correct"></i>Correct</span>
+          <span><i class="legend-box wrong"></i>Wrong</span>
+        </div>
+        <button class="icon-button" id="toggleMapButton" type="button" aria-label="Collapse question map" aria-expanded="true">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 15 6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="question-map" id="questionMap" aria-label="Jump to a question"></div>
+    </section>
+
+    <section class="quiz-card" id="quizCard" aria-live="polite">
+      <div class="quiz-topline">
+        <div class="question-tags"><span class="source-tag" id="sourceTag">KRESZ 2</span><span class="points-tag" id="pointsTag">1 point</span><span class="review-tag" id="reviewTag" hidden>Wrong-answer review</span></div>
+        <span class="question-position" id="questionPosition">Question 1 of 828</span>
+      </div>
+      <div class="question-progress"><span id="questionProgressBar"></span></div>
+      <div class="question-body" id="questionBody">
+        <h2 id="questionText"></h2>
+        <div class="question-gallery" id="questionGallery" hidden></div>
+        <form id="answerForm">
+          <fieldset id="optionsFieldset">
+            <legend class="sr-only">Choose one answer</legend>
+            <div class="options-list" id="optionsList"></div>
+          </fieldset>
+        </form>
+        <div class="answer-feedback" id="answerFeedback" role="status" hidden></div>
+      </div>
+      <div class="empty-state" id="emptyState" hidden>
+        <span class="empty-state-icon" aria-hidden="true">✓</span>
+        <h2>No wrong answers to review</h2>
+        <p>Nice work. Answer more questions or return to the full question bank.</p>
+        <button class="button button-primary" id="backToAllButton" type="button">Back to all questions</button>
+      </div>
+      <div class="quiz-footer" id="quizFooter">
+        <button class="button button-ghost nav-button" id="previousButton" type="button"><span aria-hidden="true">←</span> Previous</button>
+        <button class="button button-primary submit-button" id="submitButton" type="submit" form="answerForm" disabled>Submit answer <span aria-hidden="true">→</span></button>
+        <button class="button button-ghost nav-button" id="nextButton" type="button">Next <span aria-hidden="true">→</span></button>
+      </div>
+    </section>
+
+    <p class="storage-note"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" stroke="currentColor" stroke-width="1.8"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Progress stays in this browser. No account or internet connection needed.</p>
+  </main>
+
+  <div class="modal" id="questionsModal" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header class="modal-header">
+        <div><p class="eyebrow">QUESTION BANK</p><h2 id="modalTitle">All questions</h2></div>
+        <button class="icon-button modal-close" id="closeModalButton" type="button" aria-label="Close question list"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </header>
+      <div class="list-toolbar">
+        <div class="filter-tabs" role="group" aria-label="Filter questions">
+          <button class="filter-tab active" type="button" data-filter="all" aria-pressed="true">All <span id="filterAllCount">828</span></button>
+          <button class="filter-tab" type="button" data-filter="correct" aria-pressed="false">Correct <span id="filterCorrectCount">0</span></button>
+          <button class="filter-tab" type="button" data-filter="wrong" aria-pressed="false">Wrong <span id="filterWrongCount">0</span></button>
+          <button class="filter-tab" type="button" data-filter="unanswered" aria-pressed="false">Unanswered <span id="filterUnansweredCount">828</span></button>
+        </div>
+        <label class="search-field"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input id="questionSearch" type="search" placeholder="Search Chinese questions…" aria-label="Search questions"></label>
+      </div>
+      <div class="question-list" id="questionList"></div>
+      <div class="list-empty" id="listEmpty" hidden>No questions match this filter.</div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="questions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
