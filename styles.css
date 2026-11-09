@@ -218,3 +218,39 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+
+.button-exam { color: #fff; background: var(--navy); border-color: var(--navy); }
+.button-exam:hover { background: var(--navy-soft); }
+.quiz-status { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.exam-timer { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 7px; color: var(--teal-dark); background: var(--teal-soft); font-variant-numeric: tabular-nums; }
+.exam-timer svg { width: 17px; height: 17px; }
+.exam-timer.warning { color: var(--wrong); background: var(--wrong-soft); }
+.finish-button { min-height: 34px; padding: 6px 10px; font-size: 11px; }
+.exam-results { min-height: 460px; padding: 40px 28px; text-align: center; }
+.exam-result-badge { display: inline-block; margin-bottom: 15px; padding: 6px 12px; border-radius: 20px; color: var(--correct); background: var(--correct-soft); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.exam-result-badge.failed { color: var(--wrong); background: var(--wrong-soft); }
+.exam-results h2 { margin: 0; font-family: Georgia, serif; font-size: 30px; font-weight: 500; }
+.exam-score { margin: 20px 0 5px; }
+.exam-score strong { color: var(--teal); font-size: 64px; line-height: 1; }
+.exam-score span { margin-left: 8px; color: var(--muted); font-size: 18px; }
+.exam-pass-note { margin: 0; color: var(--muted); font-size: 12px; }
+.exam-result-stats { max-width: 450px; margin: 28px auto; display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 11px; }
+.exam-result-stats div { padding: 15px; }
+.exam-result-stats div + div { border-left: 1px solid var(--line); }
+.exam-result-stats strong { display: block; font-size: 22px; }
+.exam-result-stats span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+.exam-result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
+@media (max-width: 760px) {
+  .header-actions .button-exam span { display: none; }
+  .quiz-status { flex-wrap: wrap; gap: 7px; }
+  .finish-button { order: 3; }
+  .exam-results { padding: 32px 18px; }
+}
+
+@media (max-width: 430px) {
+  .quiz-topline { flex-direction: column; }
+  .quiz-status { width: 100%; justify-content: space-between; }
+  .exam-score strong { font-size: 54px; }
+  .exam-result-actions .button { width: 100%; }
+}

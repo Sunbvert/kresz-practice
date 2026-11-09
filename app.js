@@ -3,6 +3,8 @@
 
   const questions = window.DRIVING_QUESTIONS || [];
   const STORAGE_KEY = "kresz-practice-progress-v1";
+  const EXAM_DURATION_SECONDS = 55 * 60;
+  const EXAM_COMPOSITION = [{ points: 1, count: 45 }, { points: 3, count: 10 }];
   const questionById = new Map(questions.map((question, index) => [question.id, { question, index }]));
   const $ = id => document.getElementById(id);
   const elements = {
@@ -16,7 +18,11 @@
     submitButton: $("submitButton"), previousButton: $("previousButton"), nextButton: $("nextButton"),
     quizFooter: $("quizFooter"), emptyState: $("emptyState"), reviewWrongButton: $("reviewWrongButton"),
     questionsModal: $("questionsModal"), questionList: $("questionList"), listEmpty: $("listEmpty"),
-    questionSearch: $("questionSearch"), toggleMapButton: $("toggleMapButton"), toast: $("toast")
+    questionSearch: $("questionSearch"), toggleMapButton: $("toggleMapButton"), toast: $("toast"),
+    mockTestButton: $("mockTestButton"), examTimer: $("examTimer"), examTimerText: $("examTimerText"),
+    finishExamButton: $("finishExamButton"), examResults: $("examResults"), examResultBadge: $("examResultBadge"),
+    examResultTitle: $("examResultTitle"), examScore: $("examScore"), examCorrectCount: $("examCorrectCount"),
+    examWrongCount: $("examWrongCount"), examUnansweredCount: $("examUnansweredCount")
   };
 
   let state = loadState();
@@ -26,9 +32,10 @@
   let toastTimer = null;
   let isAdvancing = false;
   let lastFocusedElement = null;
+  let clockTimer = null;
 
   function freshState() {
-    return { answers: {}, current: 0, mode: "all" };
+    return { answers: {}, current: 0, mode: "all", exam: null };
   }
 
   function loadState() {
@@ -43,7 +50,8 @@
         }
       }
       fallback.current = Number.isInteger(saved.current) ? Math.max(0, Math.min(saved.current, questions.length - 1)) : 0;
-      fallback.mode = saved.mode === "wrong" ? "wrong" : "all";
+      fallback.exam = sanitizeExam(saved.exam);
+      fallback.mode = saved.mode === "wrong" || saved.mode === "mock" && fallback.exam ? saved.mode : "all";
       if (fallback.mode === "wrong") {
         const savedWrong = question => {
           const answer = fallback.answers[question.id];
@@ -59,6 +67,34 @@
     }
   }
 
+  function sanitizeExam(exam) {
+    if (!exam || !Array.isArray(exam.ids) || exam.ids.length !== 55 || new Set(exam.ids).size !== 55 || !Number.isFinite(exam.startedAt)) return null;
+    const examQuestions = exam.ids.map(id => questionById.get(id)?.question);
+    if (examQuestions.some(question => !question)) return null;
+    if (examQuestions.filter(question => question.points === 1).length !== 45 || examQuestions.filter(question => question.points === 3).length !== 10) return null;
+    const clean = {
+      ids: exam.ids,
+      current: Number.isInteger(exam.current) ? Math.max(0, Math.min(exam.current, 54)) : 0,
+      startedAt: exam.startedAt,
+      answers: {},
+      finished: Boolean(exam.finished),
+      finishedAt: Number.isFinite(exam.finishedAt) ? exam.finishedAt : null,
+      showResults: exam.showResults !== false
+    };
+    for (const [id, answer] of Object.entries(exam.answers || {})) {
+      const question = questionById.get(id)?.question;
+      if (exam.ids.includes(id) && Number.isInteger(answer.selected) && answer.selected >= 0 && answer.selected < question.options.length) {
+        clean.answers[id] = { selected: answer.selected };
+      }
+    }
+    if (!clean.finished && Date.now() >= clean.startedAt + EXAM_DURATION_SECONDS * 1000) {
+      clean.finished = true;
+      clean.finishedAt = clean.startedAt + EXAM_DURATION_SECONDS * 1000;
+      clean.showResults = true;
+    }
+    return clean;
+  }
+
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -67,35 +103,44 @@
     }
   }
 
+  function examQuestions() {
+    return state.exam ? state.exam.ids.map(id => questionById.get(id).question) : [];
+  }
+
   function currentQuestion() {
-    return questions[state.current];
+    return state.mode === "mock" && state.exam ? examQuestions()[state.exam.current] : questions[state.current];
+  }
+
+  function answerFor(question) {
+    return state.mode === "mock" && state.exam ? state.exam.answers[question.id] : state.answers[question.id];
   }
 
   function currentAnswer() {
     const question = currentQuestion();
-    return question ? state.answers[question.id] : null;
+    return question ? answerFor(question) : null;
   }
 
-  function isCorrect(question) {
-    return state.answers[question.id]?.selected === question.correct;
+  function isCorrect(question, answers = state.answers) {
+    return answers[question.id]?.selected === question.correct;
   }
 
-  function isWrong(question) {
-    const answer = state.answers[question.id];
+  function isWrong(question, answers = state.answers) {
+    const answer = answers[question.id];
     return Boolean(answer) && answer.selected !== question.correct;
   }
 
   function wrongQuestions() {
-    return questions.filter(isWrong);
+    return questions.filter(question => isWrong(question));
   }
 
   function sequence() {
+    if (state.mode === "mock") return examQuestions();
     return state.mode === "wrong" ? wrongQuestions() : questions;
   }
 
   function counts() {
     const answered = Object.keys(state.answers).length;
-    const correct = questions.filter(isCorrect).length;
+    const correct = questions.filter(question => isCorrect(question)).length;
     return { answered, correct, wrong: answered - correct };
   }
 
@@ -110,8 +155,8 @@
     elements.wrongButtonCount.textContent = result.wrong;
     elements.progressPercent.textContent = `${percent}%`;
     elements.progressRing.style.strokeDashoffset = String(119.38 * (1 - percent / 100));
-    elements.mapSummary.textContent = `${result.answered} of ${questions.length} answered`;
     elements.reviewWrongButton.disabled = result.wrong === 0;
+    elements.mockTestButton.querySelector("span").textContent = state.exam ? state.exam.finished ? "View result" : "Resume test" : "Mock test";
     $("filterAllCount").textContent = questions.length;
     $("filterCorrectCount").textContent = result.correct;
     $("filterWrongCount").textContent = result.wrong;
@@ -119,21 +164,28 @@
   }
 
   function renderMap() {
+    const mock = state.mode === "mock" && state.exam;
+    const mapQuestions = mock ? examQuestions() : questions;
+    const answers = mock ? state.exam.answers : state.answers;
+    const currentIndex = mock ? state.exam.current : state.current;
+    $("mapTitle").textContent = mock ? "Mock test map" : "Question map";
+    const answered = Object.keys(answers).length;
+    elements.mapSummary.textContent = mock ? `${answered} of 55 answered` : `${counts().answered} of ${questions.length} answered`;
     const fragment = document.createDocumentFragment();
-    for (const [index, question] of questions.entries()) {
+    for (const [index, question] of mapQuestions.entries()) {
       const button = document.createElement("button");
-      const answer = state.answers[question.id];
-      const status = !answer ? "unanswered" : isCorrect(question) ? "correct" : "wrong";
+      const answer = answers[question.id];
+      const status = !answer ? "unanswered" : isCorrect(question, answers) ? "correct" : "wrong";
       button.type = "button";
       button.className = `map-box ${status}`;
       button.textContent = index + 1;
-      button.title = `Question ${index + 1}: ${status}`;
+      button.title = `Question ${index + 1}: ${status} · ${question.points} point${question.points === 1 ? "" : "s"}`;
       button.setAttribute("aria-label", `Go to question ${index + 1}, ${status}`);
-      if (index === state.current) {
+      if (index === currentIndex) {
         button.classList.add("current");
         button.setAttribute("aria-current", "true");
       }
-      button.addEventListener("click", () => navigateTo(index, "all"));
+      button.addEventListener("click", () => mock ? navigateExam(index) : navigateTo(index, "all"));
       fragment.appendChild(button);
     }
     elements.questionMap.replaceChildren(fragment);
@@ -150,11 +202,26 @@
 
   function renderQuestion() {
     const wrong = wrongQuestions();
+    const mock = state.mode === "mock" && state.exam;
     const emptyReview = state.mode === "wrong" && wrong.length === 0;
+    const showResults = mock && state.exam.finished && state.exam.showResults;
     elements.emptyState.hidden = !emptyReview;
-    elements.questionBody.hidden = emptyReview;
-    elements.quizFooter.hidden = emptyReview;
-    elements.reviewTag.hidden = state.mode !== "wrong";
+    elements.examResults.hidden = !showResults;
+    elements.questionBody.hidden = emptyReview || showResults;
+    elements.quizFooter.hidden = emptyReview || showResults;
+    elements.reviewTag.hidden = state.mode !== "wrong" && !mock;
+    elements.reviewTag.textContent = mock ? "Mock test" : "Wrong-answer review";
+    elements.examTimer.hidden = !mock;
+    elements.finishExamButton.hidden = !mock || state.exam.finished;
+    if (mock) updateTimer();
+    if (showResults) {
+      elements.sourceTag.textContent = "55 questions · 75 points";
+      elements.pointsTag.hidden = true;
+      elements.questionPosition.textContent = "Test completed";
+      elements.questionProgressBar.style.width = "100%";
+      renderExamResults();
+      return;
+    }
     if (emptyReview) {
       elements.sourceTag.textContent = "Review complete";
       elements.pointsTag.hidden = true;
@@ -165,7 +232,7 @@
 
     const question = currentQuestion();
     if (!question) return;
-    const answer = state.answers[question.id];
+    const answer = answerFor(question);
     const reviewAttempt = state.mode === "wrong" && isWrong(question) && !isAdvancing;
     const displayedAnswer = reviewAttempt ? null : answer;
     const activeSequence = sequence();
@@ -175,8 +242,8 @@
     elements.pointsTag.textContent = `${question.points} point${question.points === 1 ? "" : "s"}`;
     elements.questionPosition.textContent = state.mode === "wrong"
       ? `${wrong.length} wrong answer${wrong.length === 1 ? "" : "s"} remaining`
-      : `Question ${question.number} of ${questions.length}`;
-    const progress = state.mode === "wrong"
+      : mock ? `Question ${state.exam.current + 1} of 55` : `Question ${question.number} of ${questions.length}`;
+    const progress = state.mode === "wrong" || mock
       ? (sequenceIndex + 1) / Math.max(activeSequence.length, 1) * 100
       : question.number / questions.length * 100;
     elements.questionProgressBar.style.width = `${progress}%`;
@@ -248,7 +315,7 @@
       }
       button.addEventListener("click", () => {
         const reviewAttempt = state.mode === "wrong" && isWrong(question);
-        if ((state.answers[question.id] && !reviewAttempt) || isAdvancing) return;
+        if ((answerFor(question) && !reviewAttempt) || isAdvancing) return;
         selectedOption = index;
         renderOptions(question, null);
         elements.submitButton.disabled = false;
@@ -264,7 +331,7 @@
     const correct = answer.selected === question.correct;
     elements.answerFeedback.className = `answer-feedback ${correct ? "correct" : "wrong"}`;
     if (correct) {
-      elements.answerFeedback.textContent = "Correct. Moving to the next question…";
+      elements.answerFeedback.textContent = isAdvancing ? "Correct. Moving to the next question…" : "Correct.";
     } else {
       const letter = String.fromCharCode(65 + question.correct);
       elements.answerFeedback.textContent = `Not quite. Correct answer: ${letter}. ${question.options[question.correct]}`;
@@ -344,18 +411,32 @@
     renderAll();
   }
 
+  function navigateExam(index) {
+    if (!state.exam) return;
+    cancelAdvance();
+    state.mode = "mock";
+    state.exam.current = Math.max(0, Math.min(index, 54));
+    state.exam.showResults = false;
+    selectedOption = currentAnswer()?.selected ?? null;
+    saveState();
+    renderAll();
+  }
+
   function move(delta) {
     const activeSequence = sequence();
     const index = activeSequence.findIndex(question => question.id === currentQuestion().id);
     const target = activeSequence[index + delta];
-    if (target) navigateTo(target.number - 1);
+    if (!target) return;
+    if (state.mode === "mock") navigateExam(index + delta);
+    else navigateTo(target.number - 1);
   }
 
   function submitAnswer(event) {
     event.preventDefault();
     const question = currentQuestion();
     const reviewAttempt = question && state.mode === "wrong" && isWrong(question);
-    if (!question || (state.answers[question.id] && !reviewAttempt) || selectedOption === null || isAdvancing) return;
+    if (!question || (answerFor(question) && !reviewAttempt) || selectedOption === null || isAdvancing) return;
+    if (state.mode === "mock" && state.exam) state.exam.answers[question.id] = { selected: selectedOption };
     state.answers[question.id] = { selected: selectedOption };
     isAdvancing = true;
     saveState();
@@ -363,7 +444,13 @@
     advanceTimer = setTimeout(() => {
       advanceTimer = null;
       isAdvancing = false;
-      if (state.mode === "all") {
+      if (state.mode === "mock" && state.exam) {
+        if (Object.keys(state.exam.answers).length === 55) {
+          finishExam();
+          return;
+        }
+        if (state.exam.current < 54) state.exam.current += 1;
+      } else if (state.mode === "all") {
         if (state.current < questions.length - 1) state.current += 1;
       } else {
         const wrong = wrongQuestions();
@@ -376,6 +463,103 @@
       saveState();
       renderAll();
     }, 700);
+  }
+
+  function shuffle(items) {
+    const shuffled = [...items];
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const random = Math.floor(Math.random() * (index + 1));
+      [shuffled[index], shuffled[random]] = [shuffled[random], shuffled[index]];
+    }
+    return shuffled;
+  }
+
+  function createMockTest() {
+    const ids = [];
+    for (const { points, count } of EXAM_COMPOSITION) {
+      const pool = questions.filter(question => question.points === points);
+      const unanswered = shuffle(pool.filter(question => !state.answers[question.id]));
+      const answered = shuffle(pool.filter(question => state.answers[question.id]));
+      ids.push(...[...unanswered, ...answered].slice(0, count).map(question => question.id));
+    }
+    state.exam = {
+      ids: shuffle(ids), current: 0, startedAt: Date.now(), answers: {},
+      finished: false, finishedAt: null, showResults: false
+    };
+    state.mode = "mock";
+    selectedOption = null;
+    saveState();
+    renderAll();
+  }
+
+  function openMockTest() {
+    if (!state.exam) {
+      createMockTest();
+      return;
+    }
+    cancelAdvance();
+    state.mode = "mock";
+    state.exam.showResults = state.exam.finished;
+    selectedOption = currentAnswer()?.selected ?? null;
+    saveState();
+    renderAll();
+  }
+
+  function examResult() {
+    const items = examQuestions();
+    const correct = items.filter(question => isCorrect(question, state.exam.answers));
+    const answered = Object.keys(state.exam.answers).length;
+    return {
+      score: correct.reduce((score, question) => score + question.points, 0),
+      correct: correct.length,
+      wrong: answered - correct.length,
+      unanswered: 55 - answered
+    };
+  }
+
+  function renderExamResults() {
+    const result = examResult();
+    const passed = result.score >= 65;
+    elements.examResultBadge.textContent = passed ? "Passed" : "Not passed";
+    elements.examResultBadge.classList.toggle("failed", !passed);
+    elements.examResultTitle.textContent = passed ? "Congratulations, you passed." : "Keep practising and try again.";
+    elements.examScore.textContent = result.score;
+    elements.examCorrectCount.textContent = result.correct;
+    elements.examWrongCount.textContent = result.wrong;
+    elements.examUnansweredCount.textContent = result.unanswered;
+  }
+
+  function requestFinishExam() {
+    if (!state.exam || state.exam.finished) return;
+    const unanswered = 55 - Object.keys(state.exam.answers).length;
+    if (unanswered && !window.confirm(`Finish the test with ${unanswered} unanswered question${unanswered === 1 ? "" : "s"}? Unanswered questions score zero.`)) return;
+    finishExam();
+  }
+
+  function finishExam() {
+    if (!state.exam || state.exam.finished) return;
+    cancelAdvance();
+    state.exam.finished = true;
+    state.exam.finishedAt = Date.now();
+    state.exam.showResults = true;
+    saveState();
+    renderAll();
+  }
+
+  function updateTimer() {
+    if (!state.exam) return;
+    if (state.exam.finished) {
+      elements.examTimerText.textContent = "Completed";
+      elements.examTimer.classList.remove("warning");
+      return;
+    }
+    const deadline = state.exam.startedAt + EXAM_DURATION_SECONDS * 1000;
+    const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    const minutes = Math.floor(remaining / 60);
+    const seconds = String(remaining % 60).padStart(2, "0");
+    elements.examTimerText.textContent = `${minutes}:${seconds}`;
+    elements.examTimer.classList.toggle("warning", remaining <= 300);
+    if (remaining === 0) finishExam();
   }
 
   function reviewWrong() {
@@ -442,6 +626,16 @@
   elements.previousButton.addEventListener("click", () => move(-1));
   elements.nextButton.addEventListener("click", () => move(1));
   elements.reviewWrongButton.addEventListener("click", reviewWrong);
+  elements.mockTestButton.addEventListener("click", openMockTest);
+  elements.finishExamButton.addEventListener("click", requestFinishExam);
+  $("newMockTestButton").addEventListener("click", createMockTest);
+  $("reviewExamAnswersButton").addEventListener("click", () => {
+    state.exam.showResults = false;
+    selectedOption = currentAnswer()?.selected ?? null;
+    saveState();
+    renderAll();
+  });
+  $("backToPracticeButton").addEventListener("click", () => navigateTo(state.current, "all"));
   $("backToAllButton").addEventListener("click", () => navigateTo(state.current, "all"));
   $("viewAllButton").addEventListener("click", openModal);
   $("closeModalButton").addEventListener("click", closeModal);
@@ -480,6 +674,8 @@
     elements.questionText.textContent = "The question bank could not be loaded.";
     elements.submitButton.disabled = true;
   } else {
+    saveState();
     renderAll();
+    clockTimer = setInterval(updateTimer, 1000);
   }
 })();

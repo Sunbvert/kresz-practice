@@ -16,6 +16,10 @@
       <span><strong>KRESZ</strong><small>Practice · 中文练习</small></span>
     </a>
     <nav class="header-actions" aria-label="Quiz actions">
+      <button class="button button-exam" id="mockTestButton" type="button">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="13" r="8" stroke="currentColor" stroke-width="2"/><path d="M12 9v4l3 2M9 2h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Mock test</span>
+      </button>
       <button class="button button-ghost" id="viewAllButton" type="button">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <span>All questions</span>
@@ -73,7 +77,11 @@
     <section class="quiz-card" id="quizCard" aria-live="polite">
       <div class="quiz-topline">
         <div class="question-tags"><span class="source-tag" id="sourceTag">KRESZ 2</span><span class="points-tag" id="pointsTag">1 point</span><span class="review-tag" id="reviewTag" hidden>Wrong-answer review</span></div>
-        <span class="question-position" id="questionPosition">Question 1 of 828</span>
+        <div class="quiz-status">
+          <span class="question-position" id="questionPosition">Question 1 of 828</span>
+          <span class="exam-timer" id="examTimer" role="timer" hidden><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><strong id="examTimerText">55:00</strong></span>
+          <button class="button button-ghost finish-button" id="finishExamButton" type="button" hidden>Finish test</button>
+        </div>
       </div>
       <div class="question-progress"><span id="questionProgressBar"></span></div>
       <div class="question-body" id="questionBody">
@@ -92,6 +100,23 @@
         <h2>No wrong answers to review</h2>
         <p>Nice work. Answer more questions or return to the full question bank.</p>
         <button class="button button-primary" id="backToAllButton" type="button">Back to all questions</button>
+      </div>
+      <div class="exam-results" id="examResults" hidden>
+        <p class="eyebrow">OFFICIAL-FORMAT MOCK TEST</p>
+        <span class="exam-result-badge" id="examResultBadge">Passed</span>
+        <h2 id="examResultTitle">Congratulations, you passed.</h2>
+        <p class="exam-score"><strong id="examScore">0</strong><span>/ 75 points</span></p>
+        <p class="exam-pass-note" id="examPassNote">65 points required to pass</p>
+        <div class="exam-result-stats">
+          <div><strong id="examCorrectCount">0</strong><span>Correct</span></div>
+          <div><strong id="examWrongCount">0</strong><span>Wrong</span></div>
+          <div><strong id="examUnansweredCount">0</strong><span>Unanswered</span></div>
+        </div>
+        <div class="exam-result-actions">
+          <button class="button button-primary" id="newMockTestButton" type="button">New mock test</button>
+          <button class="button button-ghost" id="reviewExamAnswersButton" type="button">Review answers</button>
+          <button class="button button-ghost" id="backToPracticeButton" type="button">Back to practice</button>
+        </div>
       </div>
       <div class="quiz-footer" id="quizFooter">
         <button class="button button-ghost nav-button" id="previousButton" type="button"><span aria-hidden="true">←</span> Previous</button>
