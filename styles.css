@@ -254,3 +254,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
   .exam-score strong { font-size: 54px; }
   .exam-result-actions .button { width: 100%; }
 }
+
+.auto-advance-control { width: max-content; margin-top: 18px; display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; cursor: pointer; user-select: none; }
+.auto-advance-control input { width: 17px; height: 17px; margin: 0; accent-color: var(--teal); cursor: pointer; }
+.auto-advance-control:hover { color: var(--navy); }

@@ -15,7 +15,7 @@
     questionPosition: $("questionPosition"), questionProgressBar: $("questionProgressBar"),
     questionBody: $("questionBody"), questionText: $("questionText"), questionGallery: $("questionGallery"),
     optionsList: $("optionsList"), answerFeedback: $("answerFeedback"), answerForm: $("answerForm"),
-    submitButton: $("submitButton"), previousButton: $("previousButton"), nextButton: $("nextButton"),
+    autoAdvanceCheckbox: $("autoAdvanceCheckbox"), submitButton: $("submitButton"), previousButton: $("previousButton"), nextButton: $("nextButton"),
     quizFooter: $("quizFooter"), emptyState: $("emptyState"), reviewWrongButton: $("reviewWrongButton"),
     questionsModal: $("questionsModal"), questionList: $("questionList"), listEmpty: $("listEmpty"),
     questionSearch: $("questionSearch"), toggleMapButton: $("toggleMapButton"), toast: $("toast"),
@@ -26,6 +26,7 @@
   };
 
   let state = loadState();
+  elements.autoAdvanceCheckbox.checked = state.autoAdvance;
   let selectedOption = currentAnswer()?.selected ?? null;
   let activeFilter = "all";
   let advanceTimer = null;
@@ -35,7 +36,7 @@
   let clockTimer = null;
 
   function freshState() {
-    return { answers: {}, current: 0, mode: "all", exam: null };
+    return { answers: {}, current: 0, mode: "all", exam: null, autoAdvance: false };
   }
 
   function loadState() {
@@ -49,6 +50,7 @@
           fallback.answers[id] = { selected: answer.selected };
         }
       }
+      fallback.autoAdvance = Boolean(saved.autoAdvance);
       fallback.current = Number.isInteger(saved.current) ? Math.max(0, Math.min(saved.current, questions.length - 1)) : 0;
       fallback.exam = sanitizeExam(saved.exam);
       fallback.mode = saved.mode === "wrong" || saved.mode === "mock" && fallback.exam ? saved.mode : "all";
@@ -319,6 +321,7 @@
         selectedOption = index;
         renderOptions(question, null);
         elements.submitButton.disabled = false;
+        if (state.autoAdvance) elements.answerForm.requestSubmit();
       });
       fragment.appendChild(button);
     });
@@ -462,7 +465,7 @@
       selectedOption = currentAnswer()?.selected ?? null;
       saveState();
       renderAll();
-    }, 700);
+    }, state.autoAdvance ? 0 : 700);
   }
 
   function shuffle(items) {
@@ -610,6 +613,7 @@
     cancelAdvance();
     state = freshState();
     selectedOption = null;
+    elements.autoAdvanceCheckbox.checked = false;
     try { localStorage.removeItem(STORAGE_KEY); } catch { showToast("Browser storage is unavailable."); }
     activeFilter = "all";
     elements.questionSearch.value = "";
@@ -623,6 +627,10 @@
   }
 
   elements.answerForm.addEventListener("submit", submitAnswer);
+  elements.autoAdvanceCheckbox.addEventListener("change", () => {
+    state.autoAdvance = elements.autoAdvanceCheckbox.checked;
+    saveState();
+  });
   elements.previousButton.addEventListener("click", () => move(-1));
   elements.nextButton.addEventListener("click", () => move(1));
   elements.reviewWrongButton.addEventListener("click", reviewWrong);
