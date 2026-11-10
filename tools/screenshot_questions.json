@@ -214,12 +214,29 @@
     ]
   },
   {
-    "questionId": "test2-q024",
+    "id": "screenshot-022",
     "images": [
       {
         "slug": "kresz2",
         "image": 20
-      },
+      }
+    ],
+    "newQuestion": {
+      "source": "Screenshot",
+      "sourceQuestion": 22,
+      "text": "在图中所示的路口处，哪辆车具有优先通行权？",
+      "points": 3,
+      "options": [
+        "C车",
+        "A车",
+        "D车"
+      ],
+      "correct": 1
+    }
+  },
+  {
+    "questionId": "test2-q024",
+    "images": [
       {
         "slug": "test2",
         "image": 11
