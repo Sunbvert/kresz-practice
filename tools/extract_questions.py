@@ -59,7 +59,6 @@ def parse_document(slug, filename, label):
             question_index = score_index - 1
             while question_index >= 0 and not paragraphs[question_index]["text"]:
                 question_index -= 1
-            previous_score = scores[index - 1][0] if index else -1
             if index + 1 < len(scores):
                 end = scores[index + 1][0] - 1
                 while end > score_index and not paragraphs[end]["text"]:
@@ -70,11 +69,6 @@ def parse_document(slug, filename, label):
             footer = next((i for i, option in enumerate(options) if option == "剩余的时间："), None)
             if footer is not None:
                 options = options[:footer]
-            images = [
-                image
-                for paragraph in paragraphs[previous_score + 1:question_index]
-                for image in paragraph["images"]
-            ]
             correct = [i for i, option in enumerate(options) if CORRECT_RE.search(option)]
             questions.append({
                 "id": f"{slug}-q{index + 1:03d}",
@@ -84,7 +78,7 @@ def parse_document(slug, filename, label):
                 "points": int(match.group(1)),
                 "rawOptions": options,
                 "correct": correct,
-                "media": images,
+                "images": [],
             })
 
     if slug == "test5":
@@ -97,20 +91,6 @@ def parse_document(slug, filename, label):
                 question["rawOptions"] = question["rawOptions"][:3]
                 question["correct"] = [0]
 
-    ASSET_DIR.mkdir(parents=True, exist_ok=True)
-    with ZipFile(path) as archive:
-        for question in questions:
-            paths = []
-            for media in question["media"]:
-                image_name = Path(media).name
-                output_name = f"{slug}-{Path(image_name).stem}.png"
-                output_path = ASSET_DIR / output_name
-                if not output_path.exists():
-                    source_image = Image.open(BytesIO(archive.read(f"word/{media}"))).convert("RGB")
-                    cropped = source_image.crop((835, 340, 1285, 730))
-                    cropped.save(output_path, optimize=True)
-                paths.append(f"assets/questions/{output_name}")
-            question["images"] = paths
     return questions
 
 
@@ -140,11 +120,62 @@ def recover_missing_answers(questions):
             raise ValueError(f"No answer key available for {question['id']}: {question['text']}")
 
 
+def apply_screenshot_questions(questions):
+    groups = json.loads((ROOT / "tools" / "screenshot_questions.json").read_text(encoding="utf-8"))
+    by_id = {question["id"]: question for question in questions}
+    source_paths = {slug: ROOT / filename for slug, filename, _ in SOURCES}
+    archives = {slug: ZipFile(path) for slug, path in source_paths.items()}
+    used = set()
+    ASSET_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        for group in groups:
+            paths = []
+            for reference in group["images"]:
+                slug = reference["slug"]
+                number = reference["image"]
+                key = (slug, number)
+                if key in used:
+                    raise ValueError(f"Duplicate screenshot assignment: {key}")
+                used.add(key)
+                output_name = f"{slug}-image{number}.png"
+                output_path = ASSET_DIR / output_name
+                source_image = Image.open(BytesIO(archives[slug].read(f"word/media/image{number}.png"))).convert("RGB")
+                source_image.crop((835, 340, 1285, 730)).save(output_path, optimize=True)
+                paths.append(f"assets/questions/{output_name}")
+            if "questionId" in group:
+                by_id[group["questionId"]]["images"].extend(paths)
+            else:
+                new = group["newQuestion"]
+                questions.append({
+                    "id": group["id"],
+                    "source": new["source"],
+                    "sourceQuestion": new["sourceQuestion"],
+                    "text": new["text"],
+                    "points": new["points"],
+                    "rawOptions": new["options"],
+                    "correct": [new["correct"]],
+                    "images": paths,
+                })
+    finally:
+        for archive in archives.values():
+            archive.close()
+    if len(used) != 151:
+        raise ValueError(f"Expected 151 screenshot assignments, found {len(used)}")
+
+
 def main():
     questions = []
     for source in SOURCES:
         questions.extend(parse_document(*source))
     recover_missing_answers(questions)
+    apply_screenshot_questions(questions)
+    question_count = len(questions)
+    questions = [
+        question
+        for question in questions
+        if question["images"] or "图" not in question["text"] and "视频" not in question["text"]
+    ]
+    removed = question_count - len(questions)
 
     output = []
     for index, question in enumerate(questions):
@@ -168,6 +199,7 @@ def main():
     (ROOT / "questions.js").write_text(f"window.DRIVING_QUESTIONS={data};\n", encoding="utf-8")
     illustrated = sum(bool(question["images"]) for question in output)
     print(f"Extracted {len(output)} questions ({illustrated} illustrated, {len(list(ASSET_DIR.glob('*.png')))} images)")
+    print(f"Removed {removed} media-dependent questions without linked media")
     print("Sources:", dict(Counter(question["source"] for question in output)))
     print("Points:", dict(Counter(question["points"] for question in output)))
 

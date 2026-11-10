@@ -682,6 +682,7 @@
     elements.questionText.textContent = "The question bank could not be loaded.";
     elements.submitButton.disabled = true;
   } else {
+    $("bankSubtitle").textContent = `${questions.length} Chinese practice questions. Your progress is saved on this device.`;
     saveState();
     renderAll();
     clockTimer = setInterval(updateTimer, 1000);
