@@ -258,3 +258,11 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .auto-advance-control { width: max-content; margin-top: 18px; display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; cursor: pointer; user-select: none; }
 .auto-advance-control input { width: 17px; height: 17px; margin: 0; accent-color: var(--teal); cursor: pointer; }
 .auto-advance-control:hover { color: var(--navy); }
+
+.map-point-filter { padding: 7px 28px 7px 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--navy-soft); background: #fff; font-size: 11px; font-weight: 650; cursor: pointer; }
+.map-point-filter:hover { border-color: #b9c9c5; }
+
+@media (max-width: 760px) {
+  .map-point-filter { order: 3; }
+  .map-legend { order: 4; width: auto; margin-left: auto; }
+}

@@ -18,7 +18,7 @@
     autoAdvanceCheckbox: $("autoAdvanceCheckbox"), submitButton: $("submitButton"), previousButton: $("previousButton"), nextButton: $("nextButton"),
     quizFooter: $("quizFooter"), emptyState: $("emptyState"), reviewWrongButton: $("reviewWrongButton"),
     questionsModal: $("questionsModal"), questionList: $("questionList"), listEmpty: $("listEmpty"),
-    questionSearch: $("questionSearch"), toggleMapButton: $("toggleMapButton"), toast: $("toast"),
+    questionSearch: $("questionSearch"), toggleMapButton: $("toggleMapButton"), mapPointFilter: $("mapPointFilter"), toast: $("toast"),
     mockTestButton: $("mockTestButton"), examTimer: $("examTimer"), examTimerText: $("examTimerText"),
     finishExamButton: $("finishExamButton"), examResults: $("examResults"), examResultBadge: $("examResultBadge"),
     examResultTitle: $("examResultTitle"), examScore: $("examScore"), examCorrectCount: $("examCorrectCount"),
@@ -167,14 +167,19 @@
 
   function renderMap() {
     const mock = state.mode === "mock" && state.exam;
-    const mapQuestions = mock ? examQuestions() : questions;
+    const baseQuestions = mock ? examQuestions() : questions;
+    const pointFilter = elements.mapPointFilter.value;
+    const mapEntries = baseQuestions
+      .map((question, index) => ({ question, index }))
+      .filter(({ question }) => pointFilter === "all" || question.points === Number(pointFilter));
     const answers = mock ? state.exam.answers : state.answers;
     const currentIndex = mock ? state.exam.current : state.current;
     $("mapTitle").textContent = mock ? "Mock test map" : "Question map";
     const answered = Object.keys(answers).length;
-    elements.mapSummary.textContent = mock ? `${answered} of 55 answered` : `${counts().answered} of ${questions.length} answered`;
+    const summary = mock ? `${answered} of 55 answered` : `${counts().answered} of ${questions.length} answered`;
+    elements.mapSummary.textContent = pointFilter === "all" ? summary : `${summary} · ${mapEntries.length} shown`;
     const fragment = document.createDocumentFragment();
-    for (const [index, question] of mapQuestions.entries()) {
+    for (const { question, index } of mapEntries) {
       const button = document.createElement("button");
       const answer = answers[question.id];
       const status = !answer ? "unanswered" : isCorrect(question, answers) ? "correct" : "wrong";
@@ -654,6 +659,7 @@
     navigateTo(state.current, "all");
   });
   elements.questionSearch.addEventListener("input", renderList);
+  elements.mapPointFilter.addEventListener("change", renderMap);
   document.querySelectorAll(".filter-tab").forEach(button => {
     button.addEventListener("click", () => {
       activeFilter = button.dataset.filter;
