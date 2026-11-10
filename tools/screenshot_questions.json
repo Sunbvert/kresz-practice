@@ -21,12 +21,28 @@
     }
   },
   {
-    "questionId": "kresz2-q201",
+    "id": "screenshot-024",
     "images": [
       {
         "slug": "kresz2",
         "image": 2
-      },
+      }
+    ],
+    "newQuestion": {
+      "source": "Screenshot",
+      "sourceQuestion": 24,
+      "text": "机动车辆是否可以驶入设有该标志的区域？",
+      "points": 1,
+      "options": [
+        "是",
+        "否"
+      ],
+      "correct": 1
+    }
+  },
+  {
+    "questionId": "kresz2-q201",
+    "images": [
       {
         "slug": "kresz2",
         "image": 63
@@ -80,10 +96,6 @@
     "images": [
       {
         "slug": "kresz2",
-        "image": 5
-      },
-      {
-        "slug": "kresz2",
         "image": 6
       }
     ]
@@ -125,12 +137,29 @@
       {
         "slug": "kresz2",
         "image": 10
-      },
+      }
+    ]
+  },
+  {
+    "id": "screenshot-023",
+    "images": [
       {
         "slug": "kresz2",
         "image": 22
       }
-    ]
+    ],
+    "newQuestion": {
+      "source": "Screenshot",
+      "sourceQuestion": 23,
+      "text": "A车在图片所示的交叉路口处左转之前，移至车行道左侧是否正确？",
+      "points": 3,
+      "options": [
+        "是，但是只有在路面标记这样指示的前提下。",
+        "否",
+        "是"
+      ],
+      "correct": 2
+    }
   },
   {
     "questionId": "kresz2-q030",
@@ -603,12 +632,29 @@
       {
         "slug": "kresz2",
         "image": 65
-      },
+      }
+    ]
+  },
+  {
+    "id": "screenshot-025",
+    "images": [
       {
         "slug": "test3",
         "image": 42
       }
-    ]
+    ],
+    "newQuestion": {
+      "source": "Screenshot",
+      "sourceQuestion": 25,
+      "text": "路标的禁止令适用于道路的哪一部分？",
+      "points": 1,
+      "options": [
+        "既适用于车行道，又适用于软质路肩。",
+        "既适用于车行道、软质路肩，又适用于硬路肩。",
+        "适用于车行道。"
+      ],
+      "correct": 2
+    }
   },
   {
     "questionId": "kresz2-q204",

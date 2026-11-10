@@ -140,6 +140,13 @@
     return state.mode === "wrong" ? wrongQuestions() : questions;
   }
 
+  function navigationSequence() {
+    const activeSequence = sequence();
+    const pointFilter = elements.mapPointFilter.value;
+    if (state.mode === "wrong" || pointFilter === "all") return activeSequence;
+    return activeSequence.filter(question => question.points === Number(pointFilter));
+  }
+
   function counts() {
     const answered = Object.keys(state.answers).length;
     const correct = questions.filter(question => isCorrect(question)).length;
@@ -244,6 +251,8 @@
     const displayedAnswer = reviewAttempt ? null : answer;
     const activeSequence = sequence();
     const sequenceIndex = activeSequence.findIndex(item => item.id === question.id);
+    const navigationItems = navigationSequence();
+    const navigationIndex = navigationItems.findIndex(item => item.id === question.id);
     elements.sourceTag.textContent = `${question.source} · #${question.sourceQuestion}`;
     elements.pointsTag.hidden = false;
     elements.pointsTag.textContent = `${question.points} point${question.points === 1 ? "" : "s"}`;
@@ -261,8 +270,8 @@
 
     elements.submitButton.disabled = (!selectedOption && selectedOption !== 0) || (Boolean(answer) && !reviewAttempt) || isAdvancing;
     elements.submitButton.innerHTML = displayedAnswer ? "Answered" : "Submit answer <span aria-hidden=\"true\">→</span>";
-    elements.previousButton.disabled = isAdvancing || sequenceIndex <= 0;
-    elements.nextButton.disabled = isAdvancing || sequenceIndex < 0 || sequenceIndex >= activeSequence.length - 1;
+    elements.previousButton.disabled = isAdvancing || navigationIndex <= 0;
+    elements.nextButton.disabled = isAdvancing || navigationIndex < 0 || navigationIndex >= navigationItems.length - 1;
   }
 
   function renderGallery(question) {
@@ -431,12 +440,16 @@
   }
 
   function move(delta) {
-    const activeSequence = sequence();
+    const activeSequence = navigationSequence();
     const index = activeSequence.findIndex(question => question.id === currentQuestion().id);
     const target = activeSequence[index + delta];
     if (!target) return;
-    if (state.mode === "mock") navigateExam(index + delta);
-    else navigateTo(target.number - 1);
+    if (state.mode === "mock") {
+      const examIndex = examQuestions().findIndex(question => question.id === target.id);
+      navigateExam(examIndex);
+    } else {
+      navigateTo(target.number - 1);
+    }
   }
 
   function submitAnswer(event) {
@@ -457,9 +470,15 @@
           finishExam();
           return;
         }
-        if (state.exam.current < 54) state.exam.current += 1;
+        const navigationItems = navigationSequence();
+        const index = navigationItems.findIndex(item => item.id === question.id);
+        const next = navigationItems[index + 1];
+        if (next) state.exam.current = examQuestions().findIndex(item => item.id === next.id);
       } else if (state.mode === "all") {
-        if (state.current < questions.length - 1) state.current += 1;
+        const navigationItems = navigationSequence();
+        const index = navigationItems.findIndex(item => item.id === question.id);
+        const next = navigationItems[index + 1];
+        if (next) state.current = next.number - 1;
       } else {
         const wrong = wrongQuestions();
         if (wrong.length) {

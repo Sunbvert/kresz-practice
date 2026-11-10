@@ -159,8 +159,8 @@ def apply_screenshot_questions(questions):
     finally:
         for archive in archives.values():
             archive.close()
-    if len(used) != 151:
-        raise ValueError(f"Expected 151 screenshot assignments, found {len(used)}")
+    if len(used) != 150:
+        raise ValueError(f"Expected 150 screenshot assignments, found {len(used)}")
 
 
 def main():
